@@ -5,12 +5,15 @@ import PromptInput from '@/components/PromptInput';
 import ImageGrid from '@/components/ImageGrid';
 import AuthModal from '@/components/AuthModal';
 import TokenPoolManager from '@/components/TokenPoolManager';
+import ImageHistory from '@/components/ImageHistory';
 import { useAuthStore } from '@/lib/store';
+import { useHistoryStore } from '@/lib/historyStore';
 
 export default function Home() {
   const [images, setImages] = useState<Array<{ id: string; url: string; prompt: string }>>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const { isAuthenticated, accessToken, tokenPool, rotationInterval, getLRUAccount, updateAccountUsage } = useAuthStore();
+  const { addImage } = useHistoryStore();
 
   const handleGenerate = async (prompt: string) => {
     if (!isAuthenticated) {
@@ -62,8 +65,12 @@ export default function Home() {
           id: Date.now().toString(),
           url: data.imageUrl,
           prompt,
+          createdAt: Date.now(),
         };
         setImages(prev => [newImage, ...prev]);
+        
+        // 加入歷史記錄
+        addImage(newImage);
       } else {
         alert(data.error || '生成失敗');
       }
@@ -79,6 +86,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <AuthModal />
       <TokenPoolManager />
+      <ImageHistory />
       
       {/* Header */}
       <header className="border-b border-gray-700 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-10">
