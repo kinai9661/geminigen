@@ -3,17 +3,19 @@
 import { useState } from 'react';
 
 interface PromptInputProps {
-  onGenerate: (prompt: string) => void;
+  onGenerate: (prompt: string, count?: number) => void;
   isGenerating: boolean;
 }
 
 export default function PromptInput({ onGenerate, isGenerating }: PromptInputProps) {
   const [prompt, setPrompt] = useState('');
+  const [batchCount, setBatchCount] = useState(1);
+  const [showBatchOptions, setShowBatchOptions] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim() && !isGenerating) {
-      onGenerate(prompt.trim());
+      onGenerate(prompt.trim(), batchCount);
     }
   };
 
@@ -42,6 +44,57 @@ export default function PromptInput({ onGenerate, isGenerating }: PromptInputPro
           />
         </div>
 
+        {/* Batch Options */}
+        <div className="border-t border-gray-700 pt-4">
+          <button
+            type="button"
+            onClick={() => setShowBatchOptions(!showBatchOptions)}
+            className="text-sm text-gray-400 hover:text-gray-300 flex items-center gap-2 transition-colors"
+          >
+            <span>{showBatchOptions ? '▼' : '▶'}</span>
+            批量生成選項
+          </button>
+          
+          {showBatchOptions && (
+            <div className="mt-3 p-4 bg-gray-900/50 rounded-lg border border-gray-700">
+              <label className="block text-sm text-gray-300 mb-2">
+                生成數量：{batchCount} 張
+              </label>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={batchCount}
+                  onChange={(e) => setBatchCount(Number(e.target.value))}
+                  disabled={isGenerating}
+                  className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-primary-500"
+                />
+                <div className="flex gap-2">
+                  {[1, 3, 5, 10].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setBatchCount(num)}
+                      disabled={isGenerating}
+                      className={`text-xs px-3 py-1.5 rounded transition-colors ${
+                        batchCount === num
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                💡 批量生成會自動使用 Token 池中的多個帳戶輪替
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="flex items-center gap-3">
           <button
             type="submit"
@@ -59,7 +112,7 @@ export default function PromptInput({ onGenerate, isGenerating }: PromptInputPro
             ) : (
               <>
                 <span className="text-xl">✨</span>
-                生成圖片
+                {batchCount > 1 ? `批量生成 ${batchCount} 張` : '生成圖片'}
               </>
             )}
           </button>
