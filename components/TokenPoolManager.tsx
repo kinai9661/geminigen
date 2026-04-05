@@ -103,7 +103,7 @@ export default function TokenPoolManager() {
 
         {/* Stats */}
         <div className="p-6 border-b border-gray-700 bg-gray-900/50">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="text-center">
               <div className="text-2xl font-bold text-white">{tokenPool.length}</div>
               <div className="text-xs text-gray-400">總帳戶數</div>
@@ -121,6 +121,46 @@ export default function TokenPoolManager() {
               <div className="text-xs text-gray-400">總使用次數</div>
             </div>
           </div>
+
+          {/* Usage Chart */}
+          {tokenPool.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2">
+                📊 使用次數統計
+              </h3>
+              <div className="space-y-2">
+                {tokenPool
+                  .sort((a, b) => b.usageCount - a.usageCount)
+                  .map((account) => {
+                    const maxUsage = Math.max(...tokenPool.map(a => a.usageCount), 1);
+                    const percentage = (account.usageCount / maxUsage) * 100;
+                    return (
+                      <div key={account.id} className="flex items-center gap-3">
+                        <div className="w-24 text-xs text-gray-400 truncate" title={account.label}>
+                          {account.label}
+                        </div>
+                        <div className="flex-1 bg-gray-700 rounded-full h-6 overflow-hidden relative">
+                          <div
+                            className={`h-full transition-all duration-500 ${
+                              account.isActive
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600'
+                                : 'bg-gradient-to-r from-gray-500 to-gray-600'
+                            }`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white">
+                            {account.usageCount} 次
+                          </div>
+                        </div>
+                        <div className="w-12 text-xs text-gray-500 text-right">
+                          {percentage.toFixed(0)}%
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Account List */}
