@@ -8,7 +8,8 @@ export default function AuthModal() {
   const [accessToken, setAccessToken] = useState('');
   const [refreshToken, setRefreshToken] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
-  const { isAuthenticated, setTokens, clearTokens } = useAuthStore();
+  const [accountLabel, setAccountLabel] = useState('');
+  const { isAuthenticated, setTokens, clearTokens, addAccount, tokenPool } = useAuthStore();
 
   useEffect(() => {
     // 首次載入時，如果未認證則顯示彈窗
@@ -132,7 +133,23 @@ export default function AuthModal() {
       setIsOpen(false);
       setAccessToken('');
       setRefreshToken('');
+      setAccountLabel('');
     }
+  };
+
+  const handleAddToPool = () => {
+    if (!accessToken.trim() || !refreshToken.trim()) {
+      alert('❌ 請先輸入 Token');
+      return;
+    }
+
+    const label = accountLabel.trim() || `帳戶 ${tokenPool.length + 1}`;
+    addAccount(accessToken.trim(), refreshToken.trim(), label);
+    
+    alert(`✅ 已加入「${label}」到帳戶池！`);
+    setAccessToken('');
+    setRefreshToken('');
+    setAccountLabel('');
   };
 
   const handleLogout = () => {
@@ -268,13 +285,40 @@ export default function AuthModal() {
                   className="w-full px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm resize-none font-mono"
                 />
               </div>
-              <button
-                type="submit"
-                disabled={!accessToken.trim() || !refreshToken.trim()}
-                className="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 disabled:from-gray-600 disabled:to-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-all disabled:cursor-not-allowed"
-              >
-                連接
-              </button>
+              <div>
+                <label htmlFor="accountLabel" className="block text-sm text-gray-300 mb-2">
+                  帳戶標籤（選填，用於帳戶池管理）
+                </label>
+                <input
+                  id="accountLabel"
+                  type="text"
+                  value={accountLabel}
+                  onChange={(e) => setAccountLabel(e.target.value)}
+                  placeholder={`例如：主帳號、備用帳號 1（預設：帳戶 ${tokenPool.length + 1}）`}
+                  className="w-full px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handleAddToPool}
+                  disabled={!accessToken.trim() || !refreshToken.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-all disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <span>🔄</span>
+                  加入帳戶池
+                </button>
+                <button
+                  type="submit"
+                  disabled={!accessToken.trim() || !refreshToken.trim()}
+                  className="bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 disabled:from-gray-600 disabled:to-gray-600 text-white font-medium py-3 px-6 rounded-lg transition-all disabled:cursor-not-allowed"
+                >
+                  直接連接
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 text-center">
+                💡 提示：「加入帳戶池」可管理多個帳戶並自動輪替，「直接連接」僅使用單一帳戶
+              </p>
             </form>
           </div>
         </div>

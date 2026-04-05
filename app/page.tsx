@@ -4,12 +4,13 @@ import { useState } from 'react';
 import PromptInput from '@/components/PromptInput';
 import ImageGrid from '@/components/ImageGrid';
 import AuthModal from '@/components/AuthModal';
+import TokenPoolManager from '@/components/TokenPoolManager';
 import { useAuthStore } from '@/lib/store';
 
 export default function Home() {
   const [images, setImages] = useState<Array<{ id: string; url: string; prompt: string }>>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, accessToken, tokenPool, getLRUAccount, updateAccountUsage } = useAuthStore();
 
   const handleGenerate = async (prompt: string) => {
     if (!isAuthenticated) {
@@ -19,15 +20,36 @@ export default function Home() {
 
     setIsGenerating(true);
     try {
+      // 優先使用 Token 池中的 LRU 帳戶
+      let selectedToken = accessToken;
+      let selectedAccountId: string | null = null;
+
+      if (tokenPool.length > 0) {
+        const lruAccount = getLRUAccount();
+        if (lruAccount) {
+          selectedToken = lruAccount.accessToken;
+          selectedAccountId = lruAccount.id;
+          console.log(`🔄 使用 LRU 帳戶: ${lruAccount.label} (使用次數: ${lruAccount.usageCount})`);
+        }
+      }
+
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({
+          prompt,
+          accessToken: selectedToken,
+        }),
       });
 
       const data = await response.json();
       
       if (data.success && data.imageUrl) {
+        // 更新帳戶使用記錄
+        if (selectedAccountId) {
+          updateAccountUsage(selectedAccountId);
+        }
+
         const newImage = {
           id: Date.now().toString(),
           url: data.imageUrl,
@@ -48,6 +70,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <AuthModal />
+      <TokenPoolManager />
       
       {/* Header */}
       <header className="border-b border-gray-700 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-10">
@@ -59,10 +82,17 @@ export default function Home() {
             </h1>
             <div className="flex items-center gap-4">
               {isAuthenticated ? (
-                <span className="text-green-400 text-sm flex items-center gap-2">
-                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  已連接
-                </span>
+                <div className="flex items-center gap-3">
+                  {tokenPool.length > 0 && (
+                    <span className="text-blue-400 text-sm">
+                      🔄 {tokenPool.filter(a => a.isActive).length} 個帳戶
+                    </span>
+                  )}
+                  <span className="text-green-400 text-sm flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    已連接
+                  </span>
+                </div>
               ) : (
                 <span className="text-yellow-400 text-sm flex items-center gap-2">
                   <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
