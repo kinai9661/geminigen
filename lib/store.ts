@@ -11,6 +11,9 @@ interface AuthState {
   // Token 帳戶池
   tokenPool: TokenAccount[];
   
+  // 輪替設定
+  rotationInterval: number; // 最小輪替間隔（毫秒），預設 60000ms (1分鐘)
+  
   // 方法
   setTokens: (accessToken: string, refreshToken: string) => void;
   clearTokens: () => void;
@@ -22,6 +25,9 @@ interface AuthState {
   getLRUAccount: () => TokenAccount | null;
   updateAccountUsage: (id: string) => void;
   clearPool: () => void;
+  
+  // 輪替設定管理
+  setRotationInterval: (interval: number) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -34,6 +40,9 @@ export const useAuthStore = create<AuthState>()(
       
       // Token 池
       tokenPool: [],
+      
+      // 輪替設定（預設 1 分鐘）
+      rotationInterval: 60000,
       
       // 設定單一 Token（向後兼容）
       setTokens: (accessToken, refreshToken) =>
@@ -109,7 +118,8 @@ export const useAuthStore = create<AuthState>()(
       
       // 獲取 LRU（最近最少使用）帳戶
       getLRUAccount: () => {
-        const { tokenPool } = get();
+        const { tokenPool, rotationInterval } = get();
+        const now = Date.now();
         
         // 過濾出啟用的帳戶
         const activeAccounts = tokenPool.filter((acc) => acc.isActive);
@@ -118,11 +128,23 @@ export const useAuthStore = create<AuthState>()(
           return null;
         }
         
-        // 按 lastUsed 排序，取最久未使用的
+        // 過濾出可用的帳戶（距離上次使用超過輪替間隔）
+        const availableAccounts = activeAccounts.filter(
+          (acc) => now - acc.lastUsed >= rotationInterval
+        );
+        
+        // 如果有可用帳戶，選擇最久未使用的
+        if (availableAccounts.length > 0) {
+          const sortedAccounts = [...availableAccounts].sort(
+            (a, b) => a.lastUsed - b.lastUsed
+          );
+          return sortedAccounts[0];
+        }
+        
+        // 如果所有帳戶都在冷卻期，返回最久未使用的（即使還在冷卻期）
         const sortedAccounts = [...activeAccounts].sort(
           (a, b) => a.lastUsed - b.lastUsed
         );
-        
         return sortedAccounts[0];
       },
       
@@ -149,6 +171,11 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
         });
+      },
+      
+      // 設定輪替間隔
+      setRotationInterval: (interval) => {
+        set({ rotationInterval: interval });
       },
     }),
     {

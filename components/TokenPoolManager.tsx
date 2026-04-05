@@ -5,7 +5,8 @@ import { useAuthStore } from '@/lib/store';
 
 export default function TokenPoolManager() {
   const [isOpen, setIsOpen] = useState(false);
-  const { tokenPool, addAccount, removeAccount, toggleAccount, clearPool } = useAuthStore();
+  const { tokenPool, rotationInterval, addAccount, removeAccount, toggleAccount, clearPool, setRotationInterval } = useAuthStore();
+  const [intervalInput, setIntervalInput] = useState(rotationInterval / 1000); // 轉換為秒
 
   const generateOneTimeCode = (accountId: string) => {
     const account = tokenPool.find(acc => acc.id === accountId);
@@ -24,6 +25,22 @@ export default function TokenPoolManager() {
   const formatDate = (timestamp: number) => {
     if (timestamp === 0) return '從未使用';
     return new Date(timestamp).toLocaleString('zh-TW');
+  };
+
+  const formatInterval = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    if (seconds < 60) return `${seconds} 秒`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} 分鐘`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours} 小時`;
+  };
+
+  const handleIntervalChange = (seconds: number) => {
+    if (seconds < 0) seconds = 0;
+    if (seconds > 86400) seconds = 86400; // 最大 24 小時
+    setIntervalInput(seconds);
+    setRotationInterval(seconds * 1000);
   };
 
   if (!isOpen) {
@@ -57,9 +74,31 @@ export default function TokenPoolManager() {
               </svg>
             </button>
           </div>
-          <p className="text-gray-400 mt-2 text-sm">
-            管理多個 Token 帳戶，系統會自動使用 LRU（最近最少使用）策略輪替
-          </p>
+          <div className="mt-3 space-y-2">
+            <p className="text-gray-400 text-sm">
+              管理多個 Token 帳戶，系統會自動使用 LRU（最近最少使用）策略輪替
+            </p>
+            <div className="flex items-center gap-3 bg-gray-900/50 p-3 rounded-lg">
+              <label className="text-sm text-gray-300 whitespace-nowrap">
+                ⏱️ 輪替間隔：
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="86400"
+                value={intervalInput}
+                onChange={(e) => handleIntervalChange(Number(e.target.value))}
+                className="flex-1 bg-gray-700 text-white px-3 py-1.5 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-400">秒</span>
+              <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
+                {formatInterval(rotationInterval)}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500">
+              💡 設定同一帳戶再次使用前的最小等待時間（0 = 無限制）
+            </p>
+          </div>
         </div>
 
         {/* Stats */}

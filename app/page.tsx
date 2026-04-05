@@ -10,7 +10,7 @@ import { useAuthStore } from '@/lib/store';
 export default function Home() {
   const [images, setImages] = useState<Array<{ id: string; url: string; prompt: string }>>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const { isAuthenticated, accessToken, tokenPool, getLRUAccount, updateAccountUsage } = useAuthStore();
+  const { isAuthenticated, accessToken, tokenPool, rotationInterval, getLRUAccount, updateAccountUsage } = useAuthStore();
 
   const handleGenerate = async (prompt: string) => {
     if (!isAuthenticated) {
@@ -29,7 +29,15 @@ export default function Home() {
         if (lruAccount) {
           selectedToken = lruAccount.accessToken;
           selectedAccountId = lruAccount.id;
-          console.log(`🔄 使用 LRU 帳戶: ${lruAccount.label} (使用次數: ${lruAccount.usageCount})`);
+          
+          // 檢查是否在冷卻期
+          const timeSinceLastUse = Date.now() - lruAccount.lastUsed;
+          const isInCooldown = timeSinceLastUse < rotationInterval;
+          
+          console.log(`🔄 使用 LRU 帳戶: ${lruAccount.label}`);
+          console.log(`   使用次數: ${lruAccount.usageCount}`);
+          console.log(`   距離上次使用: ${Math.floor(timeSinceLastUse / 1000)}秒`);
+          console.log(`   冷卻期: ${isInCooldown ? '是' : '否'}`);
         }
       }
 
