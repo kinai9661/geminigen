@@ -171,13 +171,13 @@ export default function AuthModal() {
         <div className="p-6 space-y-6">
           {/* Instructions */}
           <div className="bg-gray-900/50 rounded-lg p-4 space-y-3 text-sm">
-            <h3 className="font-semibold text-white mb-3">📋 取得 Token 步驟：</h3>
-            <ol className="space-y-2 text-gray-300 list-decimal list-inside">
-              <li>開啟 <a href="https://geminigen.ai" target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline">geminigen.ai</a> 並用 Google 帳號登入</li>
-              <li>按 <kbd className="px-2 py-1 bg-gray-700 rounded text-xs">F12</kbd> 開啟開發者工具 → 點「Console」分頁</li>
-              <li>複製下方代碼，貼到 Console 後按 Enter</li>
-              <li>看到「✅ Token 已成功同步到星光工坊！」即完成</li>
-            </ol>
+            <h3 className="font-semibold text-white mb-3">📋 認證方式：</h3>
+            <div className="space-y-2 text-gray-300">
+              <p><strong>方式 1（推薦）：</strong>點擊下方「⚡ 一鍵同步 Token」按鈕</p>
+              <p><strong>方式 2：</strong>在本站按 <kbd className="px-2 py-1 bg-gray-700 rounded text-xs">F12</kbd> → Console → 貼上下方代碼</p>
+              <p><strong>方式 3：</strong>點擊「🔍 自動提取」按鈕，然後手動點擊「連接」</p>
+              <p className="text-xs text-gray-400 mt-2">💡 提示：請先在 <a href="https://geminigen.ai" target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline">geminigen.ai</a> 登入並完成認證</p>
+            </div>
           </div>
 
           {/* 一鍵同步按鈕 */}
@@ -211,10 +211,10 @@ export default function AuthModal() {
           {/* Code Block */}
           <div className="bg-gray-900 rounded-lg p-4 relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-400">或使用 Console 手動同步</span>
+              <span className="text-xs text-gray-400">方式 2：在本站 Console 執行（從本站 localStorage 提取）</span>
               <button
                 onClick={() => {
-                  const code = `(function(){var t=null;for(var k in localStorage){try{var v=JSON.parse(localStorage.getItem(k)||'');if(v&&v.access_token&&v.refresh_token){t=v;break;}}catch(e){}}if(!t){var at=localStorage.getItem('access_token'),rt=localStorage.getItem('refresh_token');if(at&&rt)t={access_token:at,refresh_token:rt};}if(!t){alert('找不到 Token，請先登入 geminigen.ai');return;}fetch('https://gemiai.replit.app/api/public/receive-tokens',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({otp:'3a8f1cda-c4e6-44f0-be44-0bb0fa4f5a8d',access_token:t.access_token,refresh_token:t.refresh_token,label:'3'})}).then(function(r){return r.json()}).then(function(d){if(d.success)alert('✅ Token 已成功同步到星光工坊！');else alert('❌ 同步失敗：'+(d.error||'未知錯誤'));}).catch(function(){alert('❌ 無法連接星光工坊');});})();`;
+                  const code = `(function(){var s=JSON.parse(localStorage.getItem('auth-storage')||'{}').state;if(!s||!s.accessToken||!s.refreshToken){alert('❌ 請先在網站上完成認證');return;}fetch('https://gemiai.replit.app/api/public/receive-tokens',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({otp:'3a8f1cda-c4e6-44f0-be44-0bb0fa4f5a8d',access_token:s.accessToken,refresh_token:s.refreshToken,label:'3'})}).then(function(r){return r.json()}).then(function(d){if(d.success){alert('✅ Token 已成功同步到星光工坊！');console.log('Access Token:',s.accessToken);console.log('Refresh Token:',s.refreshToken);}else alert('❌ 同步失敗：'+(d.error||'未知錯誤'));}).catch(function(){alert('❌ 無法連接星光工坊');});})();`;
                   navigator.clipboard.writeText(code);
                   alert('已複製到剪貼簿！');
                 }}
@@ -224,7 +224,7 @@ export default function AuthModal() {
               </button>
             </div>
             <pre className="text-xs text-gray-300 overflow-x-auto max-h-32">
-              <code>{`(function(){var t=null;for(var k in localStorage){try{var v=JSON.parse(localStorage.getItem(k)||'');if(v&&v.access_token&&v.refresh_token){t=v;break;}}catch(e){}}if(!t){var at=localStorage.getItem('access_token'),rt=localStorage.getItem('refresh_token');if(at&&rt)t={access_token:at,refresh_token:rt};}if(!t){alert('找不到 Token，請先登入 geminigen.ai');return;}fetch('https://gemiai.replit.app/api/public/receive-tokens',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({otp:'3a8f1cda-c4e6-44f0-be44-0bb0fa4f5a8d',access_token:t.access_token,refresh_token:t.refresh_token,label:'3'})}).then(function(r){return r.json()}).then(function(d){if(d.success)alert('✅ Token 已成功同步到星光工坊！');else alert('❌ 同步失敗：'+(d.error||'未知錯誤'));}).catch(function(){alert('❌ 無法連接星光工坊');});})();`}</code>
+              <code>{`(function(){var s=JSON.parse(localStorage.getItem('auth-storage')||'{}').state;if(!s||!s.accessToken||!s.refreshToken){alert('❌ 請先在網站上完成認證');return;}fetch('https://gemiai.replit.app/api/public/receive-tokens',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({otp:'3a8f1cda-c4e6-44f0-be44-0bb0fa4f5a8d',access_token:s.accessToken,refresh_token:s.refreshToken,label:'3'})}).then(function(r){return r.json()}).then(function(d){if(d.success){alert('✅ Token 已成功同步到星光工坊！');console.log('Access Token:',s.accessToken);console.log('Refresh Token:',s.refreshToken);}else alert('❌ 同步失敗：'+(d.error||'未知錯誤'));}).catch(function(){alert('❌ 無法連接星光工坊');});})();`}</code>
             </pre>
           </div>
 
